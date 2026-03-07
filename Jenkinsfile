@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_HUB_USER = 'iiitb'
-        IMAGE_NAME = 'calculator'
+        DOCKER_HUB_USER = 'kartikeyblaze'
+        IMAGE_NAME = 'scientific-calculator'
         IMAGE_TAG = "${env.BUILD_ID}"
         DOCKER_CREDENTIALS_ID = 'docker-hub-credentials'
         EMAIL = 'kartikeyblaze@gmail.com'
