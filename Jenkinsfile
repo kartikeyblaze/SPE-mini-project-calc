@@ -5,7 +5,7 @@ pipeline {
         DOCKER_HUB_USER = 'kartikeyblaze'
         IMAGE_NAME = 'scientific-calculator'
         IMAGE_TAG = "${env.BUILD_ID}"
-        DOCKER_CREDENTIALS_ID = 'docker-hub-credentials'
+        DOCKER_CREDENTIALS_ID = 'DockerHubCred'
         EMAIL = 'kartikeyblaze@gmail.com'
     }
 
