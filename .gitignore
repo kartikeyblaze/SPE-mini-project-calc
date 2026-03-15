@@ -1,2 +1,9 @@
 __pycache__/
 REPORT.md
+*.tex
+*.aux
+*.log
+*.pdf
+*.out
+*REPORT*
+*Report*
