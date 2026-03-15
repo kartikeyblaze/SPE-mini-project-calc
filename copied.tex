@@ -1,0 +1,275 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{setspace}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{longtable}
+
+\begin{document}
+
+%------------------ Title Page ------------------%
+\begin{titlepage}
+\thispagestyle{empty}
+\begin{center}
+\vspace*{3cm}
+{\LARGE \textbf{Scientific Calculator DevOps Pipeline}\par}
+
+\vspace{2cm}
+
+\textbf{Abstract:}\\[0.5cm]
+This project demonstrates a complete end-to-end CI/CD lifecycle for a Python-based scientific calculator.
+By integrating Jenkins for orchestration, Docker for containerization, and Ansible for automated deployment,
+the pipeline ensures that every code change is rigorously tested and seamlessly delivered to a production-ready environment.
+
+\vfill
+
+\begin{flushright}
+\textbf{Project By:}\\[0.5cm]
+\textbf{Name:} Kartikey Dubey\\
+\textbf{Roll Number:} MT2025061
+\end{flushright}
+
+\end{center}
+\end{titlepage}
+
+\setstretch{1.2}
+
+%------------------ Main Report ------------------%
+
+\section*{Project Report: Scientific Calculator DevOps Pipeline}
+
+\section{Basic Ideas: The What and Why of DevOps}
+
+\textbf{What is DevOps?}\\
+DevOps is a set of practices that combines software development (Dev) and IT operations (Ops). It aims to shorten the systems development life cycle and provide continuous delivery with high software quality.
+
+\vspace{0.5em}
+\textbf{Why DevOps?}
+\begin{itemize}[noitemsep]
+  \item \textbf{Speed:} Deliver features and fixes faster.
+  \item \textbf{Reliability:} Ensure the quality of application updates and infrastructure changes.
+  \item \textbf{Scalability:} Manage infrastructure and development processes at scale.
+  \item \textbf{Collaboration:} Build more effective teams under a model that emphasizes ownership and accountability.
+\end{itemize}
+
+\section{Tools Used in This Project}
+
+\begin{longtable}{|p{3cm}|p{3cm}|p{7cm}|}
+\hline
+\textbf{Category} & \textbf{Tool} & \textbf{Purpose} \\
+\hline
+Source Control & Git / GitHub & Versioning code and hosting the remote repository. \\
+\hline
+CI/CD Orchestration & Jenkins & Automating the build, test, and deployment stages. \\
+\hline
+Containerization & Docker & Packaging the application and its dependencies into a portable image. \\
+\hline
+Artifact Repository & Docker Hub & Storing and sharing built Docker images. \\
+\hline
+Config Management & Ansible & Automating the deployment and configuration of the container on the host. \\
+\hline
+Programming Language & Python & Developing the scientific calculator application logic. \\
+\hline
+\end{longtable}
+
+\section{Step-by-Step Instructions to Reproduce}
+
+\subsection{Phase 1: Source Control with Git}
+
+Source control is the foundation of DevOps. It allows multiple developers to work on the same codebase simultaneously without overwriting each other's work.
+
+\textbf{What is Git?} Git is a distributed version control system that tracks changes in source code during software development.
+
+\vspace{0.5em}
+\textbf{Setup \& Commands:}
+\begin{enumerate}[noitemsep]
+  \item Initialize the repository: \texttt{git init}
+  \item Add files: \texttt{git add .}
+  \item Commit changes: \texttt{git commit -m "Initial commit"}
+  \item Rename branch: \texttt{git branch -M main}
+  \item Set remote: \texttt{git remote add origin https://github.com/kartikeyblaze/SPE-mini-project-calc.git}
+  \item Push to GitHub: \texttt{git push -u origin main}
+\end{enumerate}
+
+% SPACE FOR SCREENSHOT: Git push success in terminal showing remote upload
+
+\subsection{Phase 2: Jenkins Orchestration}
+
+\textbf{Intro:} Jenkins is an open-source automation server that helps automate the parts of software development related to building, testing, and deploying.
+
+\textbf{Setup \& Configuration:}
+\begin{enumerate}[noitemsep]
+  \item \textbf{Expose Jenkins with ngrok:} Run \texttt{ngrok http 8080} to get a public URL for your local Jenkins. % Terminal showing ngrok forwarding URL
+  \item \textbf{GitHub Webhook:} In GitHub Settings $\rightarrow$ Webhooks, add your ngrok URL followed by \texttt{/github-webhook/}. Set Content type to \texttt{application/json}. % GitHub Webhook configuration screenshot
+  \item \textbf{Docker Hub Credentials:} In Jenkins $\rightarrow$ Credentials $\rightarrow$ System $\rightarrow$ Global credentials, add a ``Username with password'' entry with ID \texttt{DockerHubCred}. % Jenkins Credentials screenshot
+  \item \textbf{Mail Notification:} Configure the SMTP server in Jenkins $\rightarrow$ Manage Jenkins $\rightarrow$ System. Set the SMTP server (e.g., \texttt{smtp.gmail.com}) and authentication, use port 587 for TLS, and 465 if using only SSL. % Jenkins Email Notification screenshot
+\end{enumerate}
+
+\subsection{Phase 3: Jenkinsfile Configuration}
+
+The \texttt{Jenkinsfile} defines the entire CI/CD pipeline as code.
+
+\begin{verbatim}
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_HUB_USER = 'kartikeyblaze'
+        IMAGE_NAME = 'scientific-calculator'
+        IMAGE_TAG = "${env.BUILD_ID}"
+        DOCKER_CREDENTIALS_ID = 'DockerHubCred'
+        EMAIL = 'kartikeyblaze@gmail.com'
+    }
+
+    triggers { 
+      githubPush() 
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Unit Testing') {
+            steps {
+                sh 'python3 -m unittest test_calculator.py'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh "docker build -t ${DOCKER_HUB_USER}/${IMAGE_NAME}:${IMAGE_TAG} ."
+                sh "docker tag ${DOCKER_HUB_USER}/${IMAGE_NAME}:${IMAGE_TAG} ${DOCKER_HUB_USER}/${IMAGE_NAME}:latest"
+            }
+        }
+
+        stage('Push to Docker Hub') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+                        sh 'echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin'
+                        sh "docker push ${DOCKER_HUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
+                        sh "docker push ${DOCKER_HUB_USER}/${IMAGE_NAME}:latest"
+                    }
+                }
+            }
+        }
+
+        stage('Run Ansible Playbook') {
+            steps {
+                ansiblePlaybook(
+                    playbook: 'deploy.yml',
+                    inventory: 'inventory'
+                )
+            }
+        }
+    }
+
+    post {
+        always {
+            script {
+                def status = currentBuild.result ?: 'SUCCESS'
+                mail to: EMAIL,
+                     subject: "Build ${status}: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                     body: "Build ${status} for ${env.JOB_NAME} #${env.BUILD_NUMBER}.\nView more: ${env.BUILD_URL}"
+            }
+        }
+    }
+}
+\end{verbatim}
+
+\textbf{Block-wise Explanation:}
+\begin{itemize}[noitemsep]
+  \item \texttt{pipeline \{ agent any \}}: Directs Jenkins to run this pipeline on any available agent.
+  \item \texttt{environment \{ ... \}}: Defines global variables like \texttt{DOCKER_HUB_USER} and \texttt{IMAGE_NAME} used throughout the stages.
+  \item \texttt{triggers \{ githubPush() \}}: Tells Jenkins to start the build whenever a push event is received from the GitHub webhook.
+  \item \texttt{stage('Unit Testing')}: Runs \texttt{unittest} on \texttt{test\_calculator.py}. If tests fail, the pipeline stops.
+  \item \texttt{stage('Build Docker Image')}: Builds the image using the local \texttt{Dockerfile} and tags it with the build ID and \texttt{latest}.
+  \item \texttt{stage('Push to Docker Hub')}: Securely logs into Docker Hub using \texttt{withCredentials} and pushes the images.
+  \item \texttt{stage('Run Ansible Playbook')}: Triggers the deployment phase using the Ansible plugin.
+  \item \texttt{post \{ always \{ ... \} \}}: Sends an email notification regardless of whether the build succeeded or failed.
+\end{itemize}
+
+% SPACE FOR Jenkins dashboard and pipeline stage screenshots
+
+\subsection{Phase 4: Containerization with Docker}
+
+\textbf{Intro:} Docker allows you to package an application with all of its requirements (like Python libraries) into a container that runs the same on any machine.
+
+\textbf{Dockerfile Explanation:}
+\begin{verbatim}
+FROM python:3.9-slim  # Uses a lightweight Python 3.9 image
+WORKDIR /app          # Sets the internal directory for the app
+COPY Calculator.py .  # Copies the script into the container
+CMD ["python", "Calculator.py"]  # Command to run when the container starts
+\end{verbatim}
+
+\textbf{Commands:}
+\begin{enumerate}[noitemsep]
+  \item Building: \texttt{docker build -t scientific-calculator .}
+  \item Running: \texttt{docker run -it scientific-calculator}
+\end{enumerate}
+
+% SPACE FOR Docker build / run and Docker Hub screenshots
+
+\subsection{Phase 5: Deployment with Ansible}
+
+\textbf{Intro:} Ansible is an IT automation tool that automates cloud provisioning, configuration management, and application deployment.
+
+\textbf{Inventory File (\texttt{inventory}):}\\
+Defines the target hosts. In this project, it points to \texttt{localhost} for deployment.
+\begin{verbatim}
+[localhost]
+localhost ansible_python_interpreter=/usr/bin/python3
+\end{verbatim}
+
+\textbf{Playbook Explanation (\texttt{deploy.yml}):}
+\begin{verbatim}
+---
+- name: Pull Docker Image from Docker Hub and start the container
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  tasks:
+    - name: Pull Docker Image
+      docker_image:
+        name: "kartikeyblaze/scientific-calculator:latest"
+        source: pull
+
+    - name: Remove existing container if it exists
+      docker_container:
+        name: "calculator"
+        state: absent
+
+    - name: Start Docker service
+      service:
+        name: docker
+        state: started
+
+    - name: Running container
+      shell: docker run -it -d --name calculator kartikeyblaze/scientific-calculator:latest
+\end{verbatim}
+
+\textbf{Key Tasks:}
+\begin{itemize}[noitemsep]
+  \item \texttt{docker\_image}: Pulls the latest image from the Docker Hub repo \texttt{kartikeyblaze/scientific-calculator}.
+  \item \texttt{docker\_container}: Ensures any old version of the container is removed (\texttt{state: absent}) to avoid naming conflicts.
+  \item \texttt{shell}: Runs the new container in detached mode (\texttt{-d}) using the \texttt{latest} image.
+\end{itemize}
+
+% SPACE FOR ansible-playbook and docker ps screenshots
+
+\subsection*{Email Notifications}
+
+These are sent regardless of the build status (SUCCESS or FAILURE) along with a build number and link for console output of the specified build.
+
+% SPACE FOR email notification screenshots
+
+\section*{Conclusion \& Future Scope}
+
+This project successfully implemented a standard DevOps lifecycle. The automated pipeline reduces human intervention, minimizes deployment errors, and ensures that only code passing all unit tests reaches production.
+
+\end{document}
