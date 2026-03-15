@@ -35,15 +35,15 @@ def power(a, b):
 def main():
     while True:
         print("\n--- Scientific Calculator ---")
-        print("1. Addition (+)")
-        print("2. Subtraction (-)")
-        print("3. Multiplication (*)")
-        print("4. Division (/)")
-        print("5. Square Root (sqrt)")
-        print("6. Factorial (fact)")
-        print("7. Natural Log (ln)")
-        print("8. Power (pow)")
-        print("9. Exit")
+        print("1.  Addition (+)")
+        print("2.  Subtraction (-)")
+        print("3.  Multiplication (*)")
+        print("4.  Division (/)")
+        print("5.  Square Root (sqrt)")
+        print("6.  Factorial (fact)")
+        print("7.  Natural Log (ln)")
+        print("8.  Power (pow)")
+        print("9.  Exit")
         
         try:
             choice = input("\nEnter your choice (1-9): ").strip()
